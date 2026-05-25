@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -322,13 +321,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const STUDENTS = {
+// STUDENTS โหลดจาก Firebase — ถ้า import ยังไม่เคยทำ จะใช้ fallback นี้
+const STUDENTS_FALLBACK = {
   'ป.4/1':['เด็กหญิงซูหลี วงษ์ธีรธรรม','เด็กหญิงสุภาพร -','เด็กหญิงสุธิมา สิงห์ทุ่งเสือ','เด็กหญิงวัลลิญา ไพรมุกดา','เด็กหญิงวราพร ถาวรพิพัฒน์กุล','เด็กหญิงแพรวพราว -','เด็กหญิงปริยกร เก่งกุญชร','เด็กหญิงนันทิชา -','เด็กหญิงทัดดาว สนธิพรรณ','เด็กหญิงดวงนภา ประกายน้ำ','เด็กหญิงจารุภา โชติรสสกุล','เด็กหญิงเกวลี พิมลศรทอง','เด็กชายศรัณยู มหาตมะคีรี','เด็กชายศรชัย มารยาศรี','เด็กชายวุฒินันท์ ใจเกลียว','เด็กชายฤทธิไกร ใจหยัดยืน','เด็กชายพงศกร โชติรสสกุล','เด็กชายประวิทย์ มหาตมะคีรี','เด็กชายก้องภพ พิมลศรทอง','เด็กชายกษิดิส แสนเกษตรกร','เด็กชายกมล -','เด็กหญิงธนพร -','เด็กหญิงเนาะชากุ -','เด็กหญิงนิตา -','เด็กชายสุภทัต ภูมิรินทร์พลอย','เด็กหญิงจันทร์จิรา วงศ์เจริญ','เด็กชายพงษ์เทพ วรรณวิลาศ','เด็กหญิงฉายสุดา ยุพาสกุล'],
   'ป.4/2':['เด็กหญิงสุดาพร -','เด็กหญิงอรจิรา รักเผ่าไทย','เด็กหญิงอรจิรา บุญทวีคูณ','เด็กหญิงวริศรา ไพรมุกดา','เด็กหญิงวนิดา โชติรสสกุล','เด็กหญิงพศิกา เก่งกุญชร','เด็กหญิงปฐมพร มณีประกายแก้ว','เด็กหญิงขวัญทิพย์ วรางค์กรณ์ธาดา','เด็กหญิงกิ่งฟ้า พงศ์พนาไพรดอน','เด็กหญิงกัญญารัตน์ -','เด็กหญิงกัณฐมณี ปัญญาจิตเกษม','เด็กหญิงกมลเนตร เอกอุดมรักษ์','เด็กชายเอกชัย -','เด็กชายอาทิตย์ เก่งกุญชร','เด็กชายพีรวัส สิงห์สล้าง','เด็กชายพลาโซซอ -','เด็กชายพรชัย ธนเสรีธรรม','เด็กชายทัตชน ไพรมุกดา','เด็กชายต่าบิ้บิ้ -','เด็กชายณัฐวุฒิ -','เด็กชายฉลองชัย อติโชคกุล','เด็กชายกิตติศักดิ์ คีรีสุเรนทร์','เด็กชายประยุทธ์ มหาตมะคีรี','เด็กชายแอ๊ะตามอ -','เด็กชายซะลีคูเวะ -','เด็กหญิงลลิตา -','เด็กชายกุลกิตต์ วงษ์วิชุดา','เด็กชายณรงค์ชัย วงษ์วิชุดา','เด็กชายพาจอวี -','เด็กชายอัศนี -'],
   'ป.5/1':['เด็กชายวิทยา พลังพร','เด็กชายศรชัย -','เด็กหญิงดารุณี ครองมรกต','เด็กหญิงนิภาดา โกศลบารมี','เด็กชายพีรพล แก้วพัชรพร','เด็กหญิงเอมิ -','เด็กหญิงกนกรัตน์ ทังสุรชัย','เด็กหญิงญาดา -','เด็กชายสุทิตย์ มาลาคีรีกุล','เด็กหญิงยุวดี ไพรแสงแก้ว','เด็กหญิงอรทัย ไพรแสงแก้ว','เด็กหญิงอรพิชา เจ็ดก้าวมา','เด็กชายภาคิน ดวงสกุลธรรม','เด็กหญิงคุนี -','เด็กชายทรายทราย -','เด็กหญิงสุรีพร เจริญพันธ์โชค','เด็กชายสุวิทย์ วิหคไพร','เด็กหญิงรักษ์พร -','เด็กหญิงดวงใจ คันธมาทน์งาม','เด็กชายดิเรก ไพรมุกดา','เด็กชายสิปปภาส โชติรสสกุล','เด็กหญิงแพรวา -','เด็กชายปรีชา -','เด็กหญิงยุวดี โชติรสสกุล','เด็กชายวุฒิภัทร ไพรมุกดา','เด็กหญิงเพชรลดา ทังสุรชัย','เด็กหญิงนันทิพร นราภัสสร','เด็กชายณรงค์ชัย ประกายน้ำ','เด็กหญิงบะหมี่ -','เด็กหญิงน่อกิ๊กิ -','เด็กหญิงหน่อพอเซ -','เด็กหญิงพอแกละเก่ -','เด็กชายดิ๊โพ -','เด็กหญิงน่อมึญอ -','นายณัฐดนัย -','เด็กหญิงณัฐพร สมศศิภา','เด็กหญิงกันย์สินี แก้วกุมารี'],
   'ป.5/2':['เด็กชายทินกร -','เด็กหญิงนันทิดา แสงฟ้าใส','เด็กหญิงกิตติญา มานะคีรีกุล','เด็กหญิงทีระพร -','เด็กหญิงหน่อพอทู -','เด็กหญิงแพรวา -','เด็กหญิงวิภาวดี -','เด็กหญิงรินดา -','เด็กหญิงชลธิชา โกศลบารมี','เด็กหญิงสุดา สถิตย์สาละวิน','เด็กชายเกรียงวุฒิ ไพรแสงแก้ว','เด็กหญิงประณาลี ขจรเดชวนา','เด็กหญิงสโรชา -','เด็กหญิงพรวลัย โกศลบารมี','เด็กหญิงกะโย่พอ -','เด็กชายสุวิทย์ ไพรแสงแก้ว','เด็กชายธีรเทพ มานะคีรีกุล','เด็กชายจิรัฏฐ์ มานะคีรีกุล','เด็กหญิงแพรวา -','เด็กหญิงอรนุช พนากรชัย','เด็กชายวาทิต ทัศนะงดงาม','นางสาวน่อเซเคะ -','เด็กชายจอโอะมึ -','เด็กชายน่าโล่ -','เด็กชายจ่อหนี่โท -','เด็กหญิงเหม่แซะอู -','นายจอเซทู -','นายวสันต์ พนากรชัย','เด็กชายกะหนุ -','เด็กชายเกอะปรือทู -','เด็กชายดิ๊โปะโละ -','เด็กหญิงน่อพอซอ -','เด็กชายพงศกร โศจิอรุณ','เด็กหญิงหน่อเชอแอะ -','เด็กชายจิรายุ ฉลองโชคทวี','เด็กหญิงสุพรรณิการ์ นาคาม้วนหาง','เด็กหญิงอนัญญา หงส์ทิพย์สุข','เด็กหญิงพรพิมล สมศศิภา','เด็กชายพสธร -'],
   'ม.1':['นายเตวิช แสงฟ้าใส','นายดนุเดช เกิดกุนที','เด็กหญิงดารุณี ประกายน้ำ','เด็กชายวีรากร โชติรสสกุล','เด็กชายอาทิตย์ ทังสุรชัย','เด็กหญิงอาลิสา -','เด็กหญิงชนิดา สุริยะวงศ์','เด็กชายทินกร -','เด็กหญิงจารวี วรางค์กรณ์ธาดา','เด็กหญิงวรรณภา เก่งกุญชร','เด็กหญิงจุไรรัตน์ สกุณาเคียงดง','เด็กหญิงอรดา บุญทวีคูณ','เด็กชายสิทธิพันธ์ ฟ้านภาแจ่ม','เด็กหญิงศรัณย์พร ปัญญาจิตเกษม','เด็กชายธนภัทร เก่งกุญชร','เด็กชายปิติ -','เด็กหญิงพฤกษา เครือสาร','เด็กหญิงชมพูนุช อิ่มเอมสวัสดิ์','เด็กหญิงลีลาวดี -','เด็กหญิงลลิตา -','เด็กหญิงนิตา เก่งกุญชร','เด็กชายปิยะ -','เด็กหญิงฐิตาภา ใจหยัดยืน','เด็กหญิงเพชรพลอย -','เด็กหญิงตุลยา -','นายแสงเพชร นาคาม้วนหาง','เด็กหญิงเฟื่องฟ้า -','นางสาวการะเกด -','เด็กหญิงนันทิวา นิ่มละออ','เด็กชายสนธิ -','เด็กหญิงจิดาภา กิตนิทัศน์','เด็กหญิงนุชจิรา -','เด็กหญิงจิณห์นิภา คีรีสุเรนทร์','เด็กชายพิศาล ไพรวันไพศาล','นางสาวศศิกานต์ ธนเสรีธรรม','นางสาวนิตยา สถิตย์สาละวิน','นายมาดี -','เด็กชายวรเดช ครองวิถี','เด็กหญิงภัทรวดี เกตุประจัน','เด็กชายวีรวิชญ์ กันแย้ม','เด็กหญิงณิชนันท์ กิจการจรัส','เด็กหญิงบ๊วยพอ -','นายพาต่าย่อ -','เด็กหญิงนิลภา -','เด็กหญิงนอลาซี -']
 };
+let STUDENTS = { ...STUDENTS_FALLBACK };
 
 const ROOM_COLORS = {
   'ป.4/1':['#eeedfe','#3c3489'],
@@ -346,6 +347,25 @@ let qrGenSet = new Set();
 
 function initFirebase() {
   setSyncStatus('loading');
+  // โหลดนักเรียนจาก Firebase (ถ้ามี)
+  onValue(ref(db, 'students'), snap => {
+    const data = snap.val();
+    if (data) {
+      const loaded = {};
+      Object.values(data).forEach(roomObj => {
+        if (roomObj.room && roomObj.students) {
+          loaded[roomObj.room] = Object.values(roomObj.students)
+            .sort((a,b) => a.index - b.index)
+            .map(s => s.name);
+        }
+      });
+      if (Object.keys(loaded).length > 0) {
+        STUDENTS = loaded;
+        // อัปเดต dropdown ห้องเรียนทุก select
+        updateRoomSelects();
+      }
+    }
+  });
   onValue(ref(db, 'assignments'), snap => {
     assignments = snap.val() || {};
     refreshAll();
@@ -354,6 +374,25 @@ function initFirebase() {
   onValue(ref(db, 'submissions'), snap => {
     submissions = snap.val() || {};
     refreshAll();
+  });
+}
+
+function updateRoomSelects() {
+  const rooms = Object.keys(STUDENTS);
+  const selects = ['filter-room','filter-hw-student','hw-room','qr-filter-room','report-room'];
+  selects.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    // เก็บ option แรก (ทุกห้อง / เลือกงาน)
+    const first = sel.options[0];
+    while (sel.options.length > 1) sel.remove(1);
+    rooms.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r; opt.textContent = r;
+      sel.appendChild(opt);
+    });
+    if (cur) sel.value = cur;
   });
 }
 
@@ -670,7 +709,6 @@ window.renderQRCards = function() {
   const room = document.getElementById('qr-filter-room').value;
   const q = document.getElementById('qr-search').value.trim().toLowerCase();
   const grid = document.getElementById('qr-grid');
-  qrGenSet = new Set();
   let list = [];
   Object.entries(STUDENTS).forEach(([r,names]) => {
     if (room && r!==room) return;
@@ -681,22 +719,14 @@ window.renderQRCards = function() {
   });
   grid.innerHTML = list.map(s => {
     const [bg,tc] = ROOM_COLORS[s.room]||['#f1efe8','#444441'];
+    const payload = encodeURIComponent(JSON.stringify({studentId:s.id, name:s.name, room:s.room, action:'submit'}));
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${payload}&color=1a1a18&bgcolor=ffffff&margin=4`;
     return `<div class="qr-card">
       <span class="room-pill" style="background:${bg};color:${tc};font-size:11px">${s.room}</span>
-      <div class="qr-wrap" id="qrw-${s.id}"></div>
+      <div class="qr-wrap"><img src="${qrUrl}" width="110" height="110" loading="lazy" alt="QR ${s.name}" style="border-radius:4px;display:block" onerror="this.outerHTML='<div style=\'width:110px;height:110px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#aaa;text-align:center\'>QR<br/>${s.id}</div>'"></div>
       <div style="font-size:12px;font-weight:500;line-height:1.4">${shortName(s.name)}</div>
     </div>`;
   }).join('');
-  setTimeout(() => {
-    list.forEach(s => {
-      const wrap = document.getElementById('qrw-'+s.id);
-      if (!wrap || qrGenSet.has(s.id)) return;
-      qrGenSet.add(s.id);
-      const payload = JSON.stringify({studentId:s.id, name:s.name, room:s.room, action:'submit'});
-      try { new QRCode(wrap, {text:payload, width:100, height:100, colorDark:'#1a1a18', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M}); }
-      catch(e) { wrap.innerHTML=`<div style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);text-align:center">QR<br>${s.id}</div>`; }
-    });
-  }, 100);
 };
 
 // --- REPORT ---
