@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>นำเข้ารายชื่อนักเรียน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:#f8f7f4;color:#1a1a18;padding:24px;min-height:100vh}
+.container{max-width:600px;margin:0 auto}
+h1{font-size:20px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.subtitle{font-size:14px;color:#5f5e5a;margin-bottom:20px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px}
+.stat{background:#fff;border:1px solid #e0ddd4;border-radius:10px;padding:12px;text-align:center}
+.stat-label{font-size:11px;color:#888780;margin-bottom:4px}
+.stat-val{font-size:20px;font-weight:600;color:#534ab7}
+.card{background:#fff;border:1px solid #e0ddd4;border-radius:12px;padding:20px;margin-bottom:16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:16px;font-weight:500}
+.room-list{display:flex;flex-direction:column;gap:6px}
+.room-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8f7f4;border-radius:8px;font-size:14px}
+.room-name{font-weight:500}
+.room-count{color:#5f5e5a;font-size:13px}
+.room-pill{padding:2px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.btn{padding:12px 20px;border-radius:10px;border:none;cursor:pointer;font-size:15px;font-family:'Sarabun',sans-serif;font-weight:500;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.btn-primary{background:#534ab7;color:#fff}
+.btn-primary:hover:not(:disabled){background:#3c3489}
+.btn-primary:disabled{background:#aba8d0;cursor:not-allowed}
+.btn-success{background:#e1f5ee;color:#0f6e56;border:1px solid #9fe1cb}
+.result{border-radius:10px;padding:16px;font-size:14px;font-weight:500;text-align:center;margin-top:14px;display:none}
+.result.success{background:#e1f5ee;color:#0f6e56;border:1px solid #9fe1cb}
+.result.error{background:#fcebeb;color:#a32d2d;border:1px solid #f7c1c1}
+.progress-wrap{margin-top:14px;display:none}
+.progress-label{font-size:13px;color:#5f5e5a;margin-bottom:6px;text-align:center}
+.progress-bar{height:6px;background:#e8e6e0;border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:#534ab7;border-radius:3px;transition:width .3s}
+.sync-status{display:flex;align-items:center;gap:6px;font-size:13px;color:#888780;margin-bottom:16px}
+.dot{width:7px;height:7px;border-radius:50%;background:#ccc;flex-shrink:0}
+.dot.ok{background:#1d9e75}
+.dot.err{background:#e24b4a}
+.dot.loading{background:#ef9f27;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📋 นำเข้ารายชื่อนักเรียน</h1>
+  <p class="subtitle">บันทึกรายชื่อนักเรียน 179 คน เข้าสู่ Firebase Realtime Database</p>
+
+  <div class="sync-status">
+    <div class="dot loading" id="dot"></div>
+    <span id="sync-text">กำลังเชื่อมต่อ Firebase...</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-label">ป.4/1</div><div class="stat-val">28</div></div>
+    <div class="stat"><div class="stat-label">ป.4/2</div><div class="stat-val">30</div></div>
+    <div class="stat"><div class="stat-label">ป.5/1</div><div class="stat-val">37</div></div>
+    <div class="stat"><div class="stat-label">ป.5/2</div><div class="stat-val">39</div></div>
+    <div class="stat"><div class="stat-label">ม.1</div><div class="stat-val">45</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">รายชื่อที่จะนำเข้า</span>
+      <span style="font-size:13px;color:#888780">รวม 179 คน · 5 ห้องเรียน</span>
+    </div>
+    <div class="room-list">
+      <div class="room-item">
+        <span class="room-pill" style="background:#eeedfe;color:#3c3489">ป.4/1</span>
+        <span class="room-name" style="flex:1;margin-left:10px">ป.4/1</span>
+        <span class="room-count">28 คน</span>
+      </div>
+      <div class="room-item">
+        <span class="room-pill" style="background:#e1f5ee;color:#085041">ป.4/2</span>
+        <span class="room-name" style="flex:1;margin-left:10px">ป.4/2</span>
+        <span class="room-count">30 คน</span>
+      </div>
+      <div class="room-item">
+        <span class="room-pill" style="background:#faeeda;color:#633806">ป.5/1</span>
+        <span class="room-name" style="flex:1;margin-left:10px">ป.5/1</span>
+        <span class="room-count">37 คน</span>
+      </div>
+      <div class="room-item">
+        <span class="room-pill" style="background:#faece7;color:#712b13">ป.5/2</span>
+        <span class="room-name" style="flex:1;margin-left:10px">ป.5/2</span>
+        <span class="room-count">39 คน</span>
+      </div>
+      <div class="room-item">
+        <span class="room-pill" style="background:#e6f1fb;color:#0c447c">ม.1</span>
+        <span class="room-name" style="flex:1;margin-left:10px">ม.1</span>
+        <span class="room-count">45 คน</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="import-btn" onclick="importAll()" disabled>
+    ⏳ รอเชื่อมต่อ Firebase...
+  </button>
+
+  <div class="progress-wrap" id="progress-wrap">
+    <div class="progress-label" id="progress-label">กำลังนำเข้า...</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="result" id="result"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBCfPx3HgBkNxi-mXEkONzWclwpej-LcHY",
+  authDomain: "school-homework-c56f3.firebaseapp.com",
+  databaseURL: "https://school-homework-c56f3-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "school-homework-c56f3",
+  storageBucket: "school-homework-c56f3.firebasestorage.app",
+  messagingSenderId: "238250259415",
+  appId: "1:238250259415:web:54e6ca6f8805945e2ad192"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const STUDENTS = {
+  'ป.4/1':['เด็กหญิงซูหลี วงษ์ธีรธรรม','เด็กหญิงสุภาพร -','เด็กหญิงสุธิมา สิงห์ทุ่งเสือ','เด็กหญิงวัลลิญา ไพรมุกดา','เด็กหญิงวราพร ถาวรพิพัฒน์กุล','เด็กหญิงแพรวพราว -','เด็กหญิงปริยกร เก่งกุญชร','เด็กหญิงนันทิชา -','เด็กหญิงทัดดาว สนธิพรรณ','เด็กหญิงดวงนภา ประกายน้ำ','เด็กหญิงจารุภา โชติรสสกุล','เด็กหญิงเกวลี พิมลศรทอง','เด็กชายศรัณยู มหาตมะคีรี','เด็กชายศรชัย มารยาศรี','เด็กชายวุฒินันท์ ใจเกลียว','เด็กชายฤทธิไกร ใจหยัดยืน','เด็กชายพงศกร โชติรสสกุล','เด็กชายประวิทย์ มหาตมะคีรี','เด็กชายก้องภพ พิมลศรทอง','เด็กชายกษิดิส แสนเกษตรกร','เด็กชายกมล -','เด็กหญิงธนพร -','เด็กหญิงเนาะชากุ -','เด็กหญิงนิตา -','เด็กชายสุภทัต ภูมิรินทร์พลอย','เด็กหญิงจันทร์จิรา วงศ์เจริญ','เด็กชายพงษ์เทพ วรรณวิลาศ','เด็กหญิงฉายสุดา ยุพาสกุล'],
+  'ป.4/2':['เด็กหญิงสุดาพร -','เด็กหญิงอรจิรา รักเผ่าไทย','เด็กหญิงอรจิรา บุญทวีคูณ','เด็กหญิงวริศรา ไพรมุกดา','เด็กหญิงวนิดา โชติรสสกุล','เด็กหญิงพศิกา เก่งกุญชร','เด็กหญิงปฐมพร มณีประกายแก้ว','เด็กหญิงขวัญทิพย์ วรางค์กรณ์ธาดา','เด็กหญิงกิ่งฟ้า พงศ์พนาไพรดอน','เด็กหญิงกัญญารัตน์ -','เด็กหญิงกัณฐมณี ปัญญาจิตเกษม','เด็กหญิงกมลเนตร เอกอุดมรักษ์','เด็กชายเอกชัย -','เด็กชายอาทิตย์ เก่งกุญชร','เด็กชายพีรวัส สิงห์สล้าง','เด็กชายพลาโซซอ -','เด็กชายพรชัย ธนเสรีธรรม','เด็กชายทัตชน ไพรมุกดา','เด็กชายต่าบิ้บิ้ -','เด็กชายณัฐวุฒิ -','เด็กชายฉลองชัย อติโชคกุล','เด็กชายกิตติศักดิ์ คีรีสุเรนทร์','เด็กชายประยุทธ์ มหาตมะคีรี','เด็กชายแอ๊ะตามอ -','เด็กชายซะลีคูเวะ -','เด็กหญิงลลิตา -','เด็กชายกุลกิตต์ วงษ์วิชุดา','เด็กชายณรงค์ชัย วงษ์วิชุดา','เด็กชายพาจอวี -','เด็กชายอัศนี -'],
+  'ป.5/1':['เด็กชายวิทยา พลังพร','เด็กชายศรชัย -','เด็กหญิงดารุณี ครองมรกต','เด็กหญิงนิภาดา โกศลบารมี','เด็กชายพีรพล แก้วพัชรพร','เด็กหญิงเอมิ -','เด็กหญิงกนกรัตน์ ทังสุรชัย','เด็กหญิงญาดา -','เด็กชายสุทิตย์ มาลาคีรีกุล','เด็กหญิงยุวดี ไพรแสงแก้ว','เด็กหญิงอรทัย ไพรแสงแก้ว','เด็กหญิงอรพิชา เจ็ดก้าวมา','เด็กชายภาคิน ดวงสกุลธรรม','เด็กหญิงคุนี -','เด็กชายทรายทราย -','เด็กหญิงสุรีพร เจริญพันธ์โชค','เด็กชายสุวิทย์ วิหคไพร','เด็กหญิงรักษ์พร -','เด็กหญิงดวงใจ คันธมาทน์งาม','เด็กชายดิเรก ไพรมุกดา','เด็กชายสิปปภาส โชติรสสกุล','เด็กหญิงแพรวา -','เด็กชายปรีชา -','เด็กหญิงยุวดี โชติรสสกุล','เด็กชายวุฒิภัทร ไพรมุกดา','เด็กหญิงเพชรลดา ทังสุรชัย','เด็กหญิงนันทิพร นราภัสสร','เด็กชายณรงค์ชัย ประกายน้ำ','เด็กหญิงบะหมี่ -','เด็กหญิงน่อกิ๊กิ -','เด็กหญิงหน่อพอเซ -','เด็กหญิงพอแกละเก่ -','เด็กชายดิ๊โพ -','เด็กหญิงน่อมึญอ -','นายณัฐดนัย -','เด็กหญิงณัฐพร สมศศิภา','เด็กหญิงกันย์สินี แก้วกุมารี'],
+  'ป.5/2':['เด็กชายทินกร -','เด็กหญิงนันทิดา แสงฟ้าใส','เด็กหญิงกิตติญา มานะคีรีกุล','เด็กหญิงทีระพร -','เด็กหญิงหน่อพอทู -','เด็กหญิงแพรวา -','เด็กหญิงวิภาวดี -','เด็กหญิงรินดา -','เด็กหญิงชลธิชา โกศลบารมี','เด็กหญิงสุดา สถิตย์สาละวิน','เด็กชายเกรียงวุฒิ ไพรแสงแก้ว','เด็กหญิงประณาลี ขจรเดชวนา','เด็กหญิงสโรชา -','เด็กหญิงพรวลัย โกศลบารมี','เด็กหญิงกะโย่พอ -','เด็กชายสุวิทย์ ไพรแสงแก้ว','เด็กชายธีรเทพ มานะคีรีกุล','เด็กชายจิรัฏฐ์ มานะคีรีกุล','เด็กหญิงแพรวา -','เด็กหญิงอรนุช พนากรชัย','เด็กชายวาทิต ทัศนะงดงาม','นางสาวน่อเซเคะ -','เด็กชายจอโอะมึ -','เด็กชายน่าโล่ -','เด็กชายจ่อหนี่โท -','เด็กหญิงเหม่แซะอู -','นายจอเซทู -','นายวสันต์ พนากรชัย','เด็กชายกะหนุ -','เด็กชายเกอะปรือทู -','เด็กชายดิ๊โปะโละ -','เด็กหญิงน่อพอซอ -','เด็กชายพงศกร โศจิอรุณ','เด็กหญิงหน่อเชอแอะ -','เด็กชายจิรายุ ฉลองโชคทวี','เด็กหญิงสุพรรณิการ์ นาคาม้วนหาง','เด็กหญิงอนัญญา หงส์ทิพย์สุข','เด็กหญิงพรพิมล สมศศิภา','เด็กชายพสธร -'],
+  'ม.1':['นายเตวิช แสงฟ้าใส','นายดนุเดช เกิดกุนที','เด็กหญิงดารุณี ประกายน้ำ','เด็กชายวีรากร โชติรสสกุล','เด็กชายอาทิตย์ ทังสุรชัย','เด็กหญิงอาลิสา -','เด็กหญิงชนิดา สุริยะวงศ์','เด็กชายทินกร -','เด็กหญิงจารวี วรางค์กรณ์ธาดา','เด็กหญิงวรรณภา เก่งกุญชร','เด็กหญิงจุไรรัตน์ สกุณาเคียงดง','เด็กหญิงอรดา บุญทวีคูณ','เด็กชายสิทธิพันธ์ ฟ้านภาแจ่ม','เด็กหญิงศรัณย์พร ปัญญาจิตเกษม','เด็กชายธนภัทร เก่งกุญชร','เด็กชายปิติ -','เด็กหญิงพฤกษา เครือสาร','เด็กหญิงชมพูนุช อิ่มเอมสวัสดิ์','เด็กหญิงลีลาวดี -','เด็กหญิงลลิตา -','เด็กหญิงนิตา เก่งกุญชร','เด็กชายปิยะ -','เด็กหญิงฐิตาภา ใจหยัดยืน','เด็กหญิงเพชรพลอย -','เด็กหญิงตุลยา -','นายแสงเพชร นาคาม้วนหาง','เด็กหญิงเฟื่องฟ้า -','นางสาวการะเกด -','เด็กหญิงนันทิวา นิ่มละออ','เด็กชายสนธิ -','เด็กหญิงจิดาภา กิตนิทัศน์','เด็กหญิงนุชจิรา -','เด็กหญิงจิณห์นิภา คีรีสุเรนทร์','เด็กชายพิศาล ไพรวันไพศาล','นางสาวศศิกานต์ ธนเสรีธรรม','นางสาวนิตยา สถิตย์สาละวิน','นายมาดี -','เด็กชายวรเดช ครองวิถี','เด็กหญิงภัทรวดี เกตุประจัน','เด็กชายวีรวิชญ์ กันแย้ม','เด็กหญิงณิชนันท์ กิจการจรัส','เด็กหญิงบ๊วยพอ -','นายพาต่าย่อ -','เด็กหญิงนิลภา -','เด็กหญิงนอลาซี -']
+};
+
+// ตรวจสอบการเชื่อมต่อ Firebase
+try {
+  await get(ref(db, '.info/connected'));
+  document.getElementById('dot').className = 'dot ok';
+  document.getElementById('sync-text').textContent = 'เชื่อมต่อ Firebase สำเร็จ ✓';
+  const btn = document.getElementById('import-btn');
+  btn.disabled = false;
+  btn.textContent = '📥 นำเข้ารายชื่อทั้งหมดสู่ Firebase';
+
+  // ตรวจสอบว่า import แล้วหรือยัง
+  const existing = await get(ref(db, 'students'));
+  if (existing.exists()) {
+    const count = Object.keys(existing.val()).length;
+    btn.textContent = `🔄 นำเข้าซ้ำ / อัปเดต (มีข้อมูลอยู่แล้ว ${count} ห้อง)`;
+    btn.style.background = '#0f6e56';
+  }
+} catch(e) {
+  document.getElementById('dot').className = 'dot err';
+  document.getElementById('sync-text').textContent = 'เชื่อมต่อ Firebase ไม่ได้: ' + e.message;
+}
+
+window.importAll = async function() {
+  const btn = document.getElementById('import-btn');
+  const progressWrap = document.getElementById('progress-wrap');
+  const progressFill = document.getElementById('progress-fill');
+  const progressLabel = document.getElementById('progress-label');
+  const resultEl = document.getElementById('result');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลังนำเข้า...';
+  progressWrap.style.display = 'block';
+  resultEl.style.display = 'none';
+
+  try {
+    const rooms = Object.keys(STUDENTS);
+    let done = 0;
+
+    for (const room of rooms) {
+      progressLabel.textContent = `กำลังนำเข้าห้อง ${room}...`;
+
+      const roomData = {};
+      STUDENTS[room].forEach((name, i) => {
+        const safeRoom = room.replace(/\./g, '').replace(/\//g, '_');
+        const id = 's_' + safeRoom + '_' + i;
+        roomData[id] = { id, name, room, index: i };
+      });
+
+      await set(ref(db, 'students/' + room.replace(/\./g, '').replace(/\//g, '_')), {
+        room,
+        students: roomData
+      });
+
+      done++;
+      const pct = Math.round(done / rooms.length * 100);
+      progressFill.style.width = pct + '%';
+      progressLabel.textContent = `นำเข้าแล้ว ${done}/${rooms.length} ห้อง (${pct}%)`;
+    }
+
+    // บันทึก metadata
+    await set(ref(db, 'meta/lastImport'), {
+      timestamp: Date.now(),
+      totalStudents: 179,
+      totalRooms: 5
+    });
+
+    btn.textContent = '✅ นำเข้าสำเร็จแล้ว!';
+    btn.style.background = '#1d9e75';
+    btn.disabled = false;
+
+    resultEl.className = 'result success';
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = '✅ นำเข้าสำเร็จ! บันทึกนักเรียน <strong>179 คน</strong> ใน <strong>5 ห้องเรียน</strong> เข้า Firebase แล้ว<br><span style="font-size:13px;opacity:.8">รีเฟรชหน้าระบบเช็คงานเพื่อดูข้อมูล</span>';
+
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '❌ เกิดข้อผิดพลาด — ลองใหม่';
+    btn.style.background = '#a32d2d';
+
+    resultEl.className = 'result error';
+    resultEl.style.display = 'block';
+    resultEl.textContent = 'เกิดข้อผิดพลาด: ' + e.message;
+    console.error(e);
+  }
+};
+</script>
+</body>
+</html>
