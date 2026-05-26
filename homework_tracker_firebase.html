@@ -345,6 +345,19 @@ const ROOM_COLORS = {
   'ม.1':['#e6f1fb','#0c447c']
 };
 
+// ========================================================
+// FIX: ฟังก์ชันกลางสำหรับสร้าง studentId ให้ตรงกันทุกจุด
+// เดิม: r.replace(/\./g,'')  → ลบแค่จุด เหลือ / → key ไม่ match
+// ใหม่: sanitizeRoom(r)       → ลบทั้ง . / และ space
+// ========================================================
+function sanitizeRoom(r) {
+  return r.replace(/[.\/ ]/g, '');
+}
+function makeStudentId(room, index) {
+  return 's_' + sanitizeRoom(room) + '_' + index;
+}
+// ========================================================
+
 let assignments = {};
 let submissions = {};
 let currentHWId = null;
@@ -432,22 +445,82 @@ window.saveAssignment=async function(){const name=document.getElementById('hw-na
 
 function renderAssignmentList(){const hwArr=Object.values(assignments).sort((a,b)=>b.createdAt-a.createdAt);const el=document.getElementById('hw-list-container');if(hwArr.length===0){el.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3)">ยังไม่มีงาน กด "เพิ่มงานใหม่" เพื่อเริ่ม</div>';return;}el.innerHTML='<div class="hw-list" style="padding:16px">'+hwArr.map(hw=>{const subs=getSubsForHW(hw.id);const total=hw.room?(STUDENTS[hw.room]||[]).length:Object.values(STUDENTS).flat().length;const done=Object.keys(subs).length;const pct=total?Math.round(done/total*100):0;return`<div class="hw-item"><div style="width:40px;height:40px;border-radius:var(--radius);background:var(--purple-light);display:flex;align-items:center;justify-content:center;color:var(--purple);font-size:20px;flex-shrink:0"><i class="ti ti-clipboard-list"></i></div><div class="hw-info"><div class="hw-name">${hw.name}${hw.subject?` <span style="font-size:12px;color:var(--text3)">(${hw.subject})</span>`:''}</div><div class="hw-meta">${hw.room?roomPill(hw.room):'<span style="color:var(--text3)">ทุกห้อง</span>'} · วันที่ ${fmtDate(hw.date)} · กำหนดส่ง ${fmtDate(hw.due)}</div></div><div style="text-align:center;min-width:60px"><div style="font-size:18px;font-weight:600;color:var(--teal)">${done}</div><div style="font-size:11px;color:var(--text3)">จาก ${total}</div></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div><button class="btn btn-sm" onclick="showHWDetail('${hw.id}')"><i class="ti ti-eye"></i> ดู</button></div>`;}).join('')+'</div>';}
 
-window.showHWDetail=function(hwId){currentHWId=hwId;const hw=assignments[hwId];if(!hw)return;document.getElementById('detail-title').textContent=hw.name;const subs=getSubsForHW(hwId);const targetStudents=hw.room?(STUDENTS[hw.room]||[]).map((name,i)=>({id:'s_'+hw.room.replace(/\./g,'')+'_'+i,name,room:hw.room})):Object.entries(STUDENTS).flatMap(([room,names])=>names.map((name,i)=>({id:'s_'+room.replace(/\./g,'')+'_'+i,name,room})));const submitted=targetStudents.filter(s=>subs[s.id]);const missing=targetStudents.filter(s=>!subs[s.id]);document.getElementById('detail-content').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px"><div class="stat-card teal"><div class="stat-label">ส่งแล้ว</div><div class="stat-val">${submitted.length}</div></div><div class="stat-card red"><div class="stat-label">ยังไม่ส่ง</div><div class="stat-val">${missing.length}</div></div><div class="stat-card purple"><div class="stat-label">ทั้งหมด</div><div class="stat-val">${targetStudents.length}</div></div></div>${hw.note?`<div style="background:var(--surface2);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--text2);margin-bottom:14px">${hw.note}</div>`:''}<div style="font-size:13px;font-weight:500;color:var(--text3);margin-bottom:8px">ยังไม่ส่ง (${missing.length} คน)</div><div style="max-height:200px;overflow-y:auto;margin-bottom:14px;border:.5px solid var(--border);border-radius:var(--radius)">${missing.length===0?'<div style="text-align:center;padding:16px;color:var(--teal)">✅ ทุกคนส่งแล้ว!</div>':missing.map(s=>`<div style="padding:7px 12px;border-bottom:.5px solid var(--border);font-size:14px;display:flex;align-items:center;gap:8px">${roomPill(s.room)} ${shortName(s.name)}<button onclick="markSubmit('${hwId}','${s.id}','${s.name}','${s.room}')" style="margin-left:auto;padding:3px 10px;border-radius:var(--radius);border:.5px solid #9fe1cb;background:var(--teal-light);color:var(--teal);cursor:pointer;font-size:12px;font-family:inherit">✓ ทำเครื่องหมาย</button></div>`).join('')}</div><div style="font-size:13px;font-weight:500;color:var(--text3);margin-bottom:8px">ส่งแล้ว (${submitted.length} คน)</div><div style="max-height:160px;overflow-y:auto;border:.5px solid var(--border);border-radius:var(--radius)">${submitted.map(s=>{const sub=subs[s.id];return`<div style="padding:7px 12px;border-bottom:.5px solid var(--border);font-size:14px;display:flex;align-items:center;gap:8px">${roomPill(s.room)} ${shortName(s.name)}<span style="margin-left:auto;font-size:12px;color:var(--text3)">${sub.date||''} ${sub.method==='qr'?'QR':'ครู'}</span></div>`;}).join('')}</div>`;document.getElementById('modal-hw-detail').classList.add('show');};
+// ✅ FIX: ใช้ makeStudentId() แทนการ inline .replace()
+window.showHWDetail=function(hwId){
+  currentHWId=hwId;
+  const hw=assignments[hwId];
+  if(!hw)return;
+  document.getElementById('detail-title').textContent=hw.name;
+  const subs=getSubsForHW(hwId);
+  const targetStudents=hw.room
+    ?(STUDENTS[hw.room]||[]).map((name,i)=>({id:makeStudentId(hw.room,i),name,room:hw.room}))
+    :Object.entries(STUDENTS).flatMap(([room,names])=>names.map((name,i)=>({id:makeStudentId(room,i),name,room})));
+  const submitted=targetStudents.filter(s=>subs[s.id]);
+  const missing=targetStudents.filter(s=>!subs[s.id]);
+  document.getElementById('detail-content').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px"><div class="stat-card teal"><div class="stat-label">ส่งแล้ว</div><div class="stat-val">${submitted.length}</div></div><div class="stat-card red"><div class="stat-label">ยังไม่ส่ง</div><div class="stat-val">${missing.length}</div></div><div class="stat-card purple"><div class="stat-label">ทั้งหมด</div><div class="stat-val">${targetStudents.length}</div></div></div>${hw.note?`<div style="background:var(--surface2);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--text2);margin-bottom:14px">${hw.note}</div>`:''}<div style="font-size:13px;font-weight:500;color:var(--text3);margin-bottom:8px">ยังไม่ส่ง (${missing.length} คน)</div><div style="max-height:200px;overflow-y:auto;margin-bottom:14px;border:.5px solid var(--border);border-radius:var(--radius)">${missing.length===0?'<div style="text-align:center;padding:16px;color:var(--teal)">✅ ทุกคนส่งแล้ว!</div>':missing.map(s=>`<div style="padding:7px 12px;border-bottom:.5px solid var(--border);font-size:14px;display:flex;align-items:center;gap:8px">${roomPill(s.room)} ${shortName(s.name)}<button onclick="markSubmit('${hwId}','${s.id}','${s.name}','${s.room}')" style="margin-left:auto;padding:3px 10px;border-radius:var(--radius);border:.5px solid #9fe1cb;background:var(--teal-light);color:var(--teal);cursor:pointer;font-size:12px;font-family:inherit">✓ ทำเครื่องหมาย</button></div>`).join('')}</div><div style="font-size:13px;font-weight:500;color:var(--text3);margin-bottom:8px">ส่งแล้ว (${submitted.length} คน)</div><div style="max-height:160px;overflow-y:auto;border:.5px solid var(--border);border-radius:var(--radius)">${submitted.map(s=>{const sub=subs[s.id];return`<div style="padding:7px 12px;border-bottom:.5px solid var(--border);font-size:14px;display:flex;align-items:center;gap:8px">${roomPill(s.room)} ${shortName(s.name)}<span style="margin-left:auto;font-size:12px;color:var(--text3)">${sub.date||''} ${sub.method==='qr'?'QR':'ครู'}</span></div>`;}).join('')}</div>`;
+  document.getElementById('modal-hw-detail').classList.add('show');
+};
 
 window.markSubmit=async function(hwId,sid,name,room){if(isSubmitted(hwId,sid)){toast('บันทึกแล้ว');return;}await set(ref(db,`submissions/${hwId}/${sid}`),{studentId:sid,name,room,hwId,date:today(),ts:Date.now(),method:'manual'});toast('✅ '+shortName(name)+' ส่งงานแล้ว');showHWDetail(hwId);};
 window.deleteCurrentHW=async function(){if(!currentHWId)return;if(!confirm('ลบงานนี้? ข้อมูลการส่งจะถูกลบด้วย'))return;await remove(ref(db,'assignments/'+currentHWId));await remove(ref(db,'submissions/'+currentHWId));closeModal('modal-hw-detail');toast('🗑️ ลบงานแล้ว');};
 
 // --- SCAN ---
 function updateScanHWSelect(){const sel=document.getElementById('scan-hw-select');const cur=sel.value;sel.innerHTML='<option value="">-- เลือกงาน --</option>';Object.values(assignments).sort((a,b)=>b.createdAt-a.createdAt).forEach(hw=>{sel.innerHTML+=`<option value="${hw.id}">${hw.name}${hw.room?' ('+hw.room+')':''}</option>`;});if(cur)sel.value=cur;}
-window.startScan=function(){const hwId=document.getElementById('scan-hw-select').value;if(!hwId){toast('เลือกงานก่อนนะครับ');return;}document.getElementById('scan-area').style.display='none';document.getElementById('scanner-container').style.display='block';html5QrScanner=new Html5Qrcode('qr-reader');html5QrScanner.start({facingMode:'environment'},{fps:10,qrbox:{width:250,height:250}},async qrText=>{try{const data=JSON.parse(qrText);if(!data.studentId)return;const hwId=document.getElementById('scan-hw-select').value;if(!hwId)return;if(isSubmitted(hwId,data.studentId)){toast('⚠️ '+shortName(data.name)+' ส่งแล้ว!');return;}await set(ref(db,`submissions/${hwId}/${data.studentId}`),{studentId:data.studentId,name:data.name,room:data.room,hwId,date:today(),ts:Date.now(),method:'qr'});const hw=assignments[hwId]||{};document.getElementById('scan-name').textContent=shortName(data.name);document.getElementById('scan-room').textContent=data.room;document.getElementById('scan-hw-name').textContent=hw.name||hwId;const res=document.getElementById('scan-result');res.style.display='block';res.classList.remove('scan-flash');void res.offsetWidth;res.classList.add('scan-flash');addScanLog(data.name,data.room,hw.name||hwId);toast('✅ '+shortName(data.name)+' ส่งงานแล้ว!');}catch(e){}},()=>{}).catch(err=>toast('ไม่สามารถเปิดกล้องได้: '+err));};
+
+window.startScan=function(){
+  const hwId=document.getElementById('scan-hw-select').value;
+  if(!hwId){toast('เลือกงานก่อนนะครับ');return;}
+  document.getElementById('scan-area').style.display='none';
+  document.getElementById('scanner-container').style.display='block';
+  html5QrScanner=new Html5Qrcode('qr-reader');
+  html5QrScanner.start({facingMode:'environment'},{fps:10,qrbox:{width:250,height:250}},async qrText=>{
+    try{
+      const data=JSON.parse(qrText);
+      if(!data.studentId)return;
+      const hwId=document.getElementById('scan-hw-select').value;
+      if(!hwId)return;
+      if(isSubmitted(hwId,data.studentId)){toast('⚠️ '+shortName(data.name)+' ส่งแล้ว!');return;}
+      await set(ref(db,`submissions/${hwId}/${data.studentId}`),{studentId:data.studentId,name:data.name,room:data.room,hwId,date:today(),ts:Date.now(),method:'qr'});
+      const hw=assignments[hwId]||{};
+      document.getElementById('scan-name').textContent=shortName(data.name);
+      document.getElementById('scan-room').textContent=data.room;
+      document.getElementById('scan-hw-name').textContent=hw.name||hwId;
+      const res=document.getElementById('scan-result');
+      res.style.display='block';
+      res.classList.remove('scan-flash');
+      void res.offsetWidth;
+      res.classList.add('scan-flash');
+      addScanLog(data.name,data.room,hw.name||hwId);
+      toast('✅ '+shortName(data.name)+' ส่งงานแล้ว!');
+    }catch(e){}
+  },()=>{}).catch(err=>toast('ไม่สามารถเปิดกล้องได้: '+err));
+};
+
 function addScanLog(name,room,hwName){const log=document.getElementById('scan-log');const item=document.createElement('div');item.style.cssText='padding:8px 12px;background:var(--teal-light);border-radius:var(--radius);margin-bottom:6px;font-size:13px;display:flex;align-items:center;gap:8px';item.innerHTML=`<i class="ti ti-check" style="color:var(--teal)"></i> <strong>${shortName(name)}</strong> <span style="color:var(--text3)">${room}</span> <span style="margin-left:auto;color:var(--text3)">${new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</span>`;log.insertBefore(item,log.firstChild);if(log.children.length>10)log.removeChild(log.lastChild);}
 window.stopScan=function(){if(html5QrScanner){html5QrScanner.stop().catch(()=>{});html5QrScanner=null;}const sa=document.getElementById('scan-area');const sc=document.getElementById('scanner-container');if(sa)sa.style.display='flex';if(sc)sc.style.display='none';};
 
 // --- STUDENTS ---
+// ✅ FIX: ใช้ makeStudentId()
 function populateStudentHWFilter(){const sel=document.getElementById('filter-hw-student');sel.innerHTML='<option value="">เช็คงาน (เลือกงาน)</option>';Object.values(assignments).sort((a,b)=>b.createdAt-a.createdAt).forEach(hw=>{sel.innerHTML+=`<option value="${hw.id}">${hw.name}</option>`;});}
-window.renderStudents=function(){const room=document.getElementById('filter-room').value;const q=document.getElementById('filter-name').value.trim().toLowerCase();const hwId=document.getElementById('filter-hw-student').value;let list=[];Object.entries(STUDENTS).forEach(([r,names])=>{if(room&&r!==room)return;names.forEach((name,i)=>{if(q&&!name.toLowerCase().includes(q))return;list.push({id:'s_'+r.replace(/\./g,'')+'_'+i,name,room:r});});});document.getElementById('student-count-badge').textContent=list.length+' คน';const subs=hwId?getSubsForHW(hwId):{};document.getElementById('students-table-wrap').innerHTML='<table><thead><tr><th>#</th><th>ชื่อ</th><th>ห้อง</th>'+(hwId?'<th>สถานะ</th>':'')+'</tr></thead><tbody>'+list.map((s,i)=>`<tr><td style="color:var(--text3)">${i+1}</td><td>${shortName(s.name)}</td><td>${roomPill(s.room)}</td>`+(hwId?`<td>${subs[s.id]?'<span class="hw-badge badge-done">✓ ส่งแล้ว</span>':'<span class="hw-badge badge-miss">✗ ยังไม่ส่ง</span>'}</td>`:'')+`</tr>`).join('')+'</tbody></table>';};
+window.renderStudents=function(){
+  const room=document.getElementById('filter-room').value;
+  const q=document.getElementById('filter-name').value.trim().toLowerCase();
+  const hwId=document.getElementById('filter-hw-student').value;
+  let list=[];
+  Object.entries(STUDENTS).forEach(([r,names])=>{
+    if(room&&r!==room)return;
+    names.forEach((name,i)=>{
+      if(q&&!name.toLowerCase().includes(q))return;
+      list.push({id:makeStudentId(r,i),name,room:r});
+    });
+  });
+  document.getElementById('student-count-badge').textContent=list.length+' คน';
+  const subs=hwId?getSubsForHW(hwId):{};
+  document.getElementById('students-table-wrap').innerHTML='<table><thead><tr><th>#</th><th>ชื่อ</th><th>ห้อง</th>'+(hwId?'<th>สถานะ</th>':'')+'</tr></thead><tbody>'+list.map((s,i)=>`<tr><td style="color:var(--text3)">${i+1}</td><td>${shortName(s.name)}</td><td>${roomPill(s.room)}</td>`+(hwId?`<td>${subs[s.id]?'<span class="hw-badge badge-done">✓ ส่งแล้ว</span>':'<span class="hw-badge badge-miss">✗ ยังไม่ส่ง</span>'}</td>`:'')+`</tr>`).join('')+'</tbody></table>';
+};
 
 // --- QR CARDS ---
+// ✅ FIX: ใช้ makeStudentId()
 window.renderQRCards = async function() {
   const room = document.getElementById('qr-filter-room').value;
   const q = document.getElementById('qr-search').value.trim().toLowerCase();
@@ -458,7 +531,7 @@ window.renderQRCards = async function() {
     if (room && r!==room) return;
     names.forEach((name,i) => {
       if (q && !name.toLowerCase().includes(q)) return;
-      const id = 's_'+r.replace(/\./g,'')+'_'+i;
+      const id = makeStudentId(r, i);
       list.push({id, name, room:r, idx:i});
     });
   });
@@ -496,8 +569,31 @@ window.renderQRCards = async function() {
 };
 
 // --- REPORT ---
+// ✅ FIX: ใช้ makeStudentId()
 function populateReportHWSelect(){const sel=document.getElementById('report-hw');sel.innerHTML='<option value="">เลือกงาน</option>';Object.values(assignments).sort((a,b)=>b.createdAt-a.createdAt).forEach(hw=>{sel.innerHTML+=`<option value="${hw.id}">${hw.name}</option>`;});}
-window.renderReport=function(){const hwId=document.getElementById('report-hw').value;const room=document.getElementById('report-room').value;const status=document.getElementById('report-status').value;const el=document.getElementById('report-container');if(!hwId){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">เลือกงานที่ต้องการดูรายงาน</div>';return;}const hw=assignments[hwId];const subs=getSubsForHW(hwId);let list=[];Object.entries(STUDENTS).forEach(([r,names])=>{if(room&&r!==room)return;names.forEach((name,i)=>{const id='s_'+r.replace(/\./g,'')+'_'+i;const done=!!subs[id];if(status==='done'&&!done)return;if(status==='miss'&&done)return;list.push({id,name,room:r,done,sub:subs[id]});});});const doneCnt=list.filter(s=>s.done).length;const missCnt=list.filter(s=>!s.done).length;el.innerHTML=`<div class="stats-grid" style="margin-bottom:16px"><div class="stat-card teal"><div class="stat-label">ส่งแล้ว</div><div class="stat-val">${doneCnt}</div></div><div class="stat-card red"><div class="stat-label">ยังไม่ส่ง</div><div class="stat-val">${missCnt}</div></div><div class="stat-card purple"><div class="stat-label">รวมทั้งหมด</div><div class="stat-val">${list.length}</div></div><div class="stat-card amber"><div class="stat-label">เปอร์เซ็นต์</div><div class="stat-val">${list.length?Math.round(doneCnt/list.length*100):0}%</div></div></div><div class="card"><div class="card-header"><span class="card-title">${hw.name}</span><button class="btn btn-sm" onclick="window.print()"><i class="ti ti-printer"></i> พิมพ์</button></div><table><thead><tr><th>#</th><th>ชื่อ</th><th>ห้อง</th><th>สถานะ</th><th>วันที่ส่ง</th><th>วิธี</th></tr></thead><tbody>${list.map((s,i)=>`<tr><td style="color:var(--text3)">${i+1}</td><td>${shortName(s.name)}</td><td>${roomPill(s.room)}</td><td>${s.done?'<span class="hw-badge badge-done">✓ ส่งแล้ว</span>':'<span class="hw-badge badge-miss">✗ ยังไม่ส่ง</span>'}</td><td style="color:var(--text3)">${s.sub?.date||'-'}</td><td style="color:var(--text3)">${s.sub?.method==='qr'?'QR':s.sub?.method==='manual'?'ครู':'-'}</td></tr>`).join('')}</tbody></table></div>`;};
+window.renderReport=function(){
+  const hwId=document.getElementById('report-hw').value;
+  const room=document.getElementById('report-room').value;
+  const status=document.getElementById('report-status').value;
+  const el=document.getElementById('report-container');
+  if(!hwId){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">เลือกงานที่ต้องการดูรายงาน</div>';return;}
+  const hw=assignments[hwId];
+  const subs=getSubsForHW(hwId);
+  let list=[];
+  Object.entries(STUDENTS).forEach(([r,names])=>{
+    if(room&&r!==room)return;
+    names.forEach((name,i)=>{
+      const id=makeStudentId(r,i);
+      const done=!!subs[id];
+      if(status==='done'&&!done)return;
+      if(status==='miss'&&done)return;
+      list.push({id,name,room:r,done,sub:subs[id]});
+    });
+  });
+  const doneCnt=list.filter(s=>s.done).length;
+  const missCnt=list.filter(s=>!s.done).length;
+  el.innerHTML=`<div class="stats-grid" style="margin-bottom:16px"><div class="stat-card teal"><div class="stat-label">ส่งแล้ว</div><div class="stat-val">${doneCnt}</div></div><div class="stat-card red"><div class="stat-label">ยังไม่ส่ง</div><div class="stat-val">${missCnt}</div></div><div class="stat-card purple"><div class="stat-label">รวมทั้งหมด</div><div class="stat-val">${list.length}</div></div><div class="stat-card amber"><div class="stat-label">เปอร์เซ็นต์</div><div class="stat-val">${list.length?Math.round(doneCnt/list.length*100):0}%</div></div></div><div class="card"><div class="card-header"><span class="card-title">${hw.name}</span><button class="btn btn-sm" onclick="window.print()"><i class="ti ti-printer"></i> พิมพ์</button></div><table><thead><tr><th>#</th><th>ชื่อ</th><th>ห้อง</th><th>สถานะ</th><th>วันที่ส่ง</th><th>วิธี</th></tr></thead><tbody>${list.map((s,i)=>`<tr><td style="color:var(--text3)">${i+1}</td><td>${shortName(s.name)}</td><td>${roomPill(s.room)}</td><td>${s.done?'<span class="hw-badge badge-done">✓ ส่งแล้ว</span>':'<span class="hw-badge badge-miss">✗ ยังไม่ส่ง</span>'}</td><td style="color:var(--text3)">${s.sub?.date||'-'}</td><td style="color:var(--text3)">${s.sub?.method==='qr'?'QR':s.sub?.method==='manual'?'ครู':'-'}</td></tr>`).join('')}</tbody></table></div>`;
+};
 
 // Init
 document.getElementById('hw-date').value = today();
